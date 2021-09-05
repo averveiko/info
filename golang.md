@@ -281,8 +281,190 @@ func Ints(nums []int)
 // если функция меняет сам срез — передавать значение и возвращать новое значение.
 ```
 
+Структуры
+```go
+type person struct {
+    name string
+    age  int
+}
+bob := person{"Bob", 20}
+fmt.Println(bob)
+// {Bob 20}
 
+// В Go иногда создают новые структуры через функцию-конструктор с префиксом new:
+func newPerson(name string) *person {
+    p := person{name: name}
+    p.age = 42
+    return &p
+    //Функция возвращает указатель на локальную переменную — это нормально. Go распознает такие ситуации, и выделяет память под структуру в куче (heap) вместо стека (stack), так что структура продолжит существовать после выхода из функции.
+}
+// Если функция-конструктор возвращает саму структуру, а не указатель — принято использовать префикс make вместо new:
+func makePerson(name string) person {
+    p := person{name: name}
+    p.age = 42
+    return p
+}
 
+// Чтобы получить доступ к полям структуры через указатель, не обязательно разыменовывать его через *. Эти два варианта эквивалентны:
+sven := &person{name: "Sven", age: 50}
+fmt.Println((*sven).age)
+fmt.Println(sven.age)
+// 50
+
+// Поля структуры можно изменять:
+sven.age = 51
+fmt.Println(sven.age)
+// 51
+
+// Структуры могут включать другие структуры:
+type person struct {
+    firstName string
+    lastName  string
+}
+type book struct {
+    title  string
+    author person
+}
+b := book{
+    title: "The Majik Gopher",
+    author: person{
+        firstName: "Christopher",
+        lastName:  "Swanson",
+    },
+}
+fmt.Println(b)
+// {The Majik Gopher {Christopher Swanson}}
+
+//можно даже не объявлять отдельный тип:
+type user struct {
+    name  string
+    karma struct {
+        value int
+        title string
+    }
+}
+
+u := user{
+    name: "Chris",
+    karma: struct {
+        value int
+        title string
+    }{
+        value: 100,
+        title: "^-^",
+    },
+}
+fmt.Printf("%+v\n", u)
+// {name:Chris karma:{value:100 title:^-^}}
+// Благодаря шаблону %+v, Printf() печатает структуру вместе с названиями полей.
+
+// Поле структуры может ссылаться на другую структуру:
+type comment struct {
+    text   string
+    author *user
+}
+chris := user{
+    name: "Chris",
+}
+c := comment{
+    text:   "Gophers are awesome!",
+    author: &chris,
+}
+fmt.Printf("%+v\n", c)
+// {text:Gophers are awesome! author:0xc0000981e0}
+```
+
+Методы
+```go
+type rect struct {
+    width, height int
+}
+func (r rect) area() int {
+    return r.width * r.height
+}
+
+// Получателем может быть не значение заданного типа, а указатель на это значение:
+type circle struct {
+    radius int
+}
+func (c *circle) area() float64 {
+    return math.Pi * math.Pow(float64(c.radius), 2)
+}
+cptr := &circle{radius: 5}
+fmt.Println("circle area:", cptr.area())
+// circle area: 78.54
+
+//Считается хорошим тоном во всех методах использовать или только значение, или только указатель, но не смешивать одно с другим. 
+// Обычно используют указатель: так Go не приходится копировать всю структуру, а метод может ее изменить.
+```
+
+Определяемые типы
+```go
+type inn string
+func (id inn) isValid() bool {
+    if len(id) != 12 {
+        return false
+    }
+    for _, char := range id {
+        if !unicode.IsDigit(char) {
+            return false
+        }
+    }
+    return true
+}
+// Это чем-то похоже на наследование, но механизм более примитивный. Если создать новый определяемый тип на основе inn — он унаследует структуру и свойства inn, но не методы
+```
+
+Композиция
+```go
+// В Go нет наследования. Вместо него активно используется композиция — когда новое поведение собирают из кирпичиков существующего.
+// Есть тип «счетчик»:
+type counter struct {
+    value uint
+}
+func (c *counter) increment() {
+    c.value++
+}
+func (c *counter) incrementDelta(delta uint) {
+    c.value += delta
+}
+
+// Мы хотим замерять использование сервисов. Чтобы не дублировать существующие функции, добавим счетчик в тип «использование сервиса»:
+type usage struct {
+    service string
+    counter counter
+}
+func makeUsage(service string) usage {
+    return usage{service, counter{}}
+}
+//usage.counter.increment()
+
+// Для типа «просмотры страницы» тоже добавим счетчик:
+type pageviews struct {
+    url *url.URL
+    counter counter
+}
+func makePageviews(uri string) pageviews {
+    u, err := url.Parse(uri)
+    if err != nil {
+        log.Fatal(err)
+    }
+    return pageviews{u, counter{}}
+}
+```
+
+Встраивание
+```go
+type usage struct {
+    service string
+    counter // встраивание (см пример выше)
+}
+
+func makeUsage(service string) usage {
+    return usage{service, counter{}}
+}
+// теперь просто usage.increment()
+```
 
 Разное
 ```go
