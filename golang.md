@@ -466,6 +466,144 @@ func makeUsage(service string) usage {
 // теперь просто usage.increment()
 ```
 
+Интерфейсы
+```go
+type geometry interface {
+    area() float64
+    perim() float64
+}
+// реализация
+type rect struct {
+    width, height float64
+}
+func (r rect) area() float64 {
+    return r.width * r.height
+}
+func (r rect) perim() float64 {
+    return 2*r.width + 2*r.height
+}
+
+// Встраивание интерфейса
+// Есть тип «счетчик»:
+type counter struct {
+    val uint
+}
+func (c *counter) increment() {
+    c.val++
+}
+func (c *counter) value() uint {
+    return c.val
+}
+// Мы хотим встраивать счетчик в другие типы, но не давать прямой доступ к полю val — чтобы менять значение счетчика можно было только через методы.
+Определим интерфейс счетчика:
+type Counter interface {
+    increment()
+    value() uint
+}
+// И вместо конкретного типа counter встроим интерфейс Counter, который он реализует:
+type usage struct {
+    service string
+    Counter
+}
+// В конструкторе будем создавать конкретное значение типа counter, но потребителям об этом знать не обязательно:
+func newUsage(service string) *usage {
+    return &usage{service, &counter{}}
+}
+
+// Пустой интерфейс
+interface{}
+// Пустой интерфейс может содержать значение любого типа (ведь у каждого типа есть как минимум 0 методов). Пустые интерфейсы используют, если тип значения заранее не известен. 
+// Например, функция из пакета fmt:
+func Println(a ...interface{}) (n int, err error)
+
+// Приведение типа
+// Приведение типа (type assertion) извлекает конкретное значение из переменной интерфейсного типа:
+var ival interface{} = "hello"
+
+str, ok := ival.(string)
+fmt.Println(str, ok)
+// hello true
+flo, ok = ival.(float64)
+fmt.Println(flo, ok)
+// 0 false
+
+// Переключатель типа
+switch ival.(type) {
+case string:
+	fmt.Println("It's a string")
+case float64:
+	fmt.Println("It's a float")
+default:
+	fmt.Println("It's a mystery")
+}
+// It's a string
+```
+
+Ошибки
+```go
+func sqrt(x float64) (float64, error) {
+    if x < 0 {
+        return 0, errors.New("expect x >= 0")
+    }
+    // `nil` в качестве ошибки указывает, что ошибок не было.
+    return math.Sqrt(x), nil
+}
+
+for _, x := range []float64{49, -49} {
+    if res, err := sqrt(x); err != nil {
+        fmt.Printf("sqrt(%v) failed: %v\n", x, err)
+    } else {
+        fmt.Printf("sqrt(%v) = %v\n", x, res)
+    }
+}
+// sqrt(49) = 7
+// sqrt(-49) failed: expect x >= 0
+
+// Собственный тип ошибки (Чтобы создать собственный тип ошибки, достаточно реализовать метод Error().)
+type error interface {
+    Error() string
+}
+
+type lookupError struct {
+    src    string
+    substr string
+}
+func (e *lookupError) Error() string {
+    return fmt.Sprintf("'%s' not found in '%s'", e.substr, e.src)
+}
+
+func indexOf(src string, substr string) (int, error) {
+    idx := strings.Index(src, substr)
+    if idx == -1 {
+        // Создаем и возвращаем ошибку типа `lookupError`.
+        return -1, &lookupError{src, substr}
+    }
+    return idx, nil
+}
+
+// Проверим работу indexOf() для разных подстрок.
+src := "go is awesome"
+for _, substr := range []string{"go", "js"} {
+    if res, err := indexOf(src, substr); err != nil {
+        fmt.Printf("indexOf(%#v, %#v) failed: %v\n", src, substr, err)
+    } else {
+        fmt.Printf("indexOf(%#v, %#v) = %v\n", src, substr, res)
+    }
+}
+// indexOf("go is awesome", "go") = 0
+// indexOf("go is awesome", "js") failed: 'js' not found in 'go is awesome'
+
+// Поскольку indexOf() возвращает общий тип error, чтобы получить доступ к конкретному объекту ошибки, придется использовать приведение типа:
+_, err := indexOf(src, "js")
+if err, ok := err.(*lookupError); ok {
+    fmt.Println("err.src:", err.src)
+    fmt.Println("err.substr:", err.substr)
+}
+// err.src: go is awesome
+// err.substr: js
+```
+
+
 Разное
 ```go
 // Перебор числа по цифрам (Взятие остатка от деления "%" числа на 10, всегда вам даст последнее из его цифр)
