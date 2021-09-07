@@ -603,6 +603,65 @@ if err, ok := err.(*lookupError); ok {
 // err.substr: js
 ```
 
+Defer
+```go
+func main() {
+    f, err := createFile("/tmp/defer.txt")
+    if err != nil {
+        log.Fatal("Error creating file: ", err)
+    }
+    defer closeFile(f) // Закрыть по выходу из функции
+    if err := writeFile(f); err != nil {
+        log.Fatal("Error writing to file: ", err)
+    }
+}
+```
+
+Panic / Recover
+```go
+// Если во время выполнения программы происходит неисправимая ошибка, срабатывает паника (panic). Это аналог исключения
+// Допустим, мы написали функцию, которая возвращает символ строки по индексу, но забыли проверить, что индекс попадает в границы:
+func getChar(str string, idx int) byte {
+    return str[idx]
+}
+// Если вызвать getChar() с некорректным индексом — сработает паника:
+c := getChar("hello", 10)
+// panic: runtime error: index out of range [10] with length 5
+
+//Панику можно вызвать и вручную с помощью одноименной встроенной функции:
+panic("oops")
+// Так редко делают — в Go принято возвращать ошибку из функции, а не паниковать.
+
+// Recover
+// Отловить любые непредвиденные ошибки:
+
+func protect(fn func()) {
+    defer func() {
+        if err := recover(); err != nil {
+            fmt.Println("ERROR:", err)
+        } else {
+            fmt.Println("Everything went smoothly!")
+        }
+    }()
+    fn()
+}
+
+//Здесь сработает паника:
+protect(func() {
+    c := getChar("hello", 10)
+    fmt.Println("hello[10] = ", c)
+})
+// ERROR: runtime error: index out of range [10] with length 5
+
+// А здесь функция отработает без ошибок:
+protect(func() {
+    c := getChar("hello", 4)
+    fmt.Println("hello[4] =", c)
+})
+// hello[4] = 111
+// Everything went smoothly!
+```
+
 
 Разное
 ```go
