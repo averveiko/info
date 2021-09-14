@@ -662,6 +662,82 @@ protect(func() {
 // Everything went smoothly!
 ```
 
+Новый модуль
+```sh
+# Модуль инициализируется командой go mod init:
+
+$ mkdir match
+$ cd match
+$ go mod init github.com/averveiko/match
+go: creating new go.mod: module github.com/averveiko/match
+$ touch main.go
+
+# go.mod описывает модуль: идентификатор, минимальная версия Go, зависимости (их пока нет)
+# Если программа компилируется в исполняемый файл, у нее должен быть пакет с названием main. Если бы мы делали библиотеку — назвали бы файл match.go, а пакет match.
+```
+
+Сборка и установка
+```sh
+go build # собирает модуль в исполняемый файл
+go install # устанавливает модуль в домашний каталог Go ($HOME/go для Linux/macOS, %USERPROFILE%\go для Windows):
+```
+
+Внешние зависимости
+```sh
+$ go get github.com/sahilm/fuzzy
+go: downloading github.com/sahilm/fuzzy v0.1.0
+go get: added github.com/sahilm/fuzzy v0.1.0
+# go get помещает скачанный модуль в домашний каталог Go (~/go). В каталог с исходниками нашего модуля он не попадает. Таким образом, все внешние зависимости хранятся в общей куче, а не в конкретных проектах (в противоположность venv в питоне и node_modules в js).
+```
+```go
+// Подключим и используем в main.go:
+import (
+    // ...
+    "github.com/sahilm/fuzzy"
+)
+func main() {
+    // ...
+    matches := fuzzy.Find(pattern, []string{src})
+    isMatch := len(matches) > 0
+    // ...
+}
+
+//Зависимость зафиксирована в go.mod:
+module github.com/gothanks/match
+
+go 1.16
+
+require (
+    github.com/kylelemons/godebug v1.1.0 // indirect
+    github.com/sahilm/fuzzy v0.1.0
+)
+// Модуль github.com/kylelemons/godebug — транзитивная зависимость (от него зависит github.com/sahilm/fuzzy), поэтому записан как indirect.
+```
+
+Обновление зависимостей
+```sh
+# Показать основной модуль и его зависимости:
+$ go list -m all
+github.com/gothanks/match
+github.com/kylelemons/godebug v1.1.0
+github.com/sahilm/fuzzy v0.1.0
+
+# Посмотреть все версии конкретного модуля:
+$ go list -m -versions github.com/sahilm/fuzzy
+github.com/sahilm/fuzzy v0.0.1 v0.0.2 v0.0.3 v0.0.4 v0.0.5 v0.1.0
+
+# Обновить конкретный модуль на последнюю patch-версию в пределах действующей minor-версии (например, 1.1.0 → 1.1.5):
+$ go get -u=patch github.com/sahilm/fuzzy
+
+# Обновить конкретный модуль на последнюю minor-версию в пределах действующей major-версии (1.1.0 → 1.2.1):
+$ go get -u github.com/sahilm/fuzzy
+
+# Go предполагает, что авторы модулей следуют правилам семантического версионирования, при котором minor- и patch-версии остаются обратно совместимыми — поэтому go get -u обновляет на последнюю выпущенную версию.
+# Если меняется major-версия (например, 1.2.1 → 2.0.0), у модуля меняется идентификатор (github.com/sahilm/fuzzy → github.com/sahilm/fuzzy/v2). go get -u автоматически на такую версию не обновит. Это сделано специально, потому что новая major-версия может быть несовместима с предыдущей.
+
+# Удалить неактуальные зависимости из go.mod:
+$ go mod tidy
+```
 
 Разное
 ```go
