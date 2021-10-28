@@ -1,12 +1,27 @@
-create Dockerfile
+Create Dockerfile
+---
+
+hub.docker.com - see images here
 
 ```Dockerfile
+# Base image
 FROM openjdk:11
+
+# just for info
+MAINTAINER Aleksander Verveiko <averveiko@gmail.com>
+
+# run into container (and set ENTRYPOINT ["cowsay"]), after docker run <image> TEXT
+RUN apt-get update && apt-get install -y cowsay && ln -s /usr/games/cowsay /usr/bin/cowsay
+
 ARG JAR_FILE=dataspace-multisearch-module/target/dataspace-multisearch-module-DEV-SNAPSHOT.jar
 COPY ${JAR_FILE} app.jar
 COPY /docs /docs
 ENTRYPOINT ["java","-jar","/app.jar"]
 ```
+
+Commands
+---
+
 ```shell
 # Просмотр образов
 docker images
@@ -44,4 +59,53 @@ docker run --name container_name image_name
 
 # show resource usage
 docker stats
+
+# Запустить остановленный контейнер
+docker start <con_id>
+
+# Остановить контейнер
+docker stop <con_id>
+
+# Запустить контейнер и зайти в его bash
+$ sudo docker run -it ubuntu bash
+
+# просмотреть инфу о контейнере (describe k8s)
+docker inspect <con_d>
+
+# Изменения котрые мы выполнили в контейнере
+docker diff <con_d>
+
+# Logs
+docker logs <con_d>
+
+# Определение\переопределение параметров окружения
+docker run -e SOME_ENV=some_value
+```
+
+Docker-compose
+---
+
+Сервисы видят друг друга по именам db и adminer
+```yaml
+# Use root/example as user/password credentials
+version: '3.1'
+
+services:
+
+  db:
+    image: mariadb
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: example
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8080:8080
+```
+
+Run / stop
+```shell
+docker-compose up / down
 ```
