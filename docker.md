@@ -42,4 +42,6 @@ CONTAINER ID        IMAGE               COMMAND                CREATED          
 # run a container with custom name:
 docker run --name container_name image_name
 
+# show resource usage
+docker stats
 ```
