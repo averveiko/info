@@ -80,6 +80,9 @@ docker logs <con_d>
 
 # Определение\переопределение параметров окружения
 docker run -e SOME_ENV=some_value
+
+# Show image layers
+docker history <image>
 ```
 
 Docker-compose
@@ -104,8 +107,25 @@ services:
     ports:
       - 8080:8080
 ```
+Вместо указания image: можно указать build: ./dir, где dir каталог с Dockerfile по которому будет создан образ
 
-Run / stop
 ```shell
+# Run / stop [-d as daemon]
 docker-compose up / down
+
+# ps
+docker-compose ps
+
+```
+
+Volumes
+---
+```shell
+# Прокинуть каталог my/own/datadir внутрь контейнера
+$ docker run --name some-mariadb -v /my/own/datadir:/var/lib/mysql
+# В Dockerfile это будет выглядеть так:
+# VOLUME /my/own/datadir:/var/lib/mysql
+# В yaml так:
+# volumes:/my/own/datadir:/var/lib/mysql
+   - 
 ```
