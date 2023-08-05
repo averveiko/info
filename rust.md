@@ -98,7 +98,135 @@ assert!((-1. / std::f32::INFINITY).is_sign_negative());
 // Явное преобразование типов
 i as f64
 x as i32
+
+// Некоторые методы типа Char
+assert_eq!('*'.is_alphabetic(), false);
+assert_eq!('β'.is_alphabetic(), true);
+assert_eq!('8'.to_digit(10), Some(8));
+assert_eq!('ಠ'.len_utf8(), 3);
+assert_eq!(std::char::from_digit(2, 10), Some('2'));
+
+// Кортежи
+let t = ("Brazil", 1985, 'A') // (&str, i32, Char)
+t.0, t.1, t.2
+// Сигнатура метода деления строки на 2: fn split_at(&self, mid: usize) -> (&str, &str);
+let text = "I see the eigenvalue in thine eye";
+let (head, tail) = text.split_at(21); // Результат можно присвоить 2м переменным
+assert_eq!(head, "I see the eigenvalue ");
+assert_eq!(tail, "in thine eye");
 ```
 
+## Указательные типы
+```rust
+// Ссылки
+&String – ссылка на значение типа String
 
+// Выражение &x порождает ссылку на x; в Rust говорят, что оно «заимствует ссылку на x»
+// Если имеется ссылка r, то выражение *r дает значение, на которое указывает r
+// &T – неизменяемая ссылка, как constT* в C;&mut T – изменяемая ссылка, как T* в C.
+
+// Боксы
+let t = (12, "eggs");
+let b = Box::new(t);  //выделить память для кортежа из кучи
+```
+
+## Массивы
+
+```rust
+let mut chaos = [3, 5, 4, 1, 2];
+chaos.sort();
+chaos.reverse();
+```
+
+## Векторы
+
+```rust
+let mut v = Vec::new(); // Создать пустой вектор
+
+let mut v = vec![2, 3, 5, 7];
+assert_eq!(v.iter().fold(1, |a, b| a * b), 210);
+
+v.push(11);
+v.push(13);
+assert_eq!(v.iter().fold(1, |a, b| a * b), 30030);
+
+// Вставить в позицию 3 элемент 35.
+v.insert(3, 35);
+// Удалить элемент в позиции 1.
+v.remove(1)
+
+// Построить вектор из значений, порождаемых итератором:
+let v: Vec<i32> = (0..5).collect(); // Нужно явно указать тип, так как collect умеет строить разные коллекции
+assert_eq!(v, [0, 1, 2, 3, 4]);
+
+// Если заранее известно, сколько элементов будет храниться в векторе, то вместо функции Vec::new можно вызвать функцию Vec::with_capacity
+let mut v = Vec::with_capacity(2);
+assert_eq!(v.len(), 0);
+assert_eq!(v.capacity(), 2);
+
+let mut v = vec!["carmen", "miranda"];
+assert_eq!(v.pop(), Some("miranda"));
+assert_eq!(v.pop(), Some("carmen"));
+assert_eq!(v.pop(), None);
+```
+
+## Срезы
+Срез, записываемый в виде [T] без указания длины, – это участок массива или вектора. Поскольку длина среза может быть любой, они не хранятся в переменных и не передаются в виде аргументов функции. Срезы всегда передаются по ссылке. Ссылка на срез является толстым указателем, она занимает два слова: указатель на первый элемент среза и количество элементов в нем.
+```rust
+let v: Vec<f64> = vec![0.0,  0.707,  1.0,  0.707];
+let a: [f64; 4] =     [0.0, -0.707, -1.0, -0.707];
+
+let sv: &[f64] = &v;
+let sa: &[f64] = &a;
+
+print(&v[0..2]); // напечатать первые два элемента v
+print(&a[2..]); // напечатать элементы a, начиная с a[2]
+print(&sv[1..3]); // напечатать v[1] и v[2]
+```
+## Строковые литералы
+```rust
+let speech = "\"Ouch!\" said the well.\n";
+
+// Сырые строки, последовательности не распазнаются
+let default_win_install_path = r"C:\Program Files\Gorillas";
+let pattern = Regex::new(r"\d+(\.\d+)*");
+
+println!(r###"
+      Эта простая строка начинается последовательностью 'r###"'.
+      Поэтому она заканчивается, только когда встретится кавычка('"'),
+      за которой следуют три знака решетки('###'):
+"###);
+```
+
+## Байтовые строки
+Строковый литерал с префиксом b называется байтовой строкой. Она представляет собой срез значений типа u8 (т. е. байтов), а не Юникод-текст.
+```rust
+let method = b"GET";
+assert_eq!(method, &[b'G', b'E', b'T']);
+
+// Метод .len() типа String или &str возвращает длину строки, измеряемую в байтах, а не в символах:
+assert_eq!("ಠ_ಠ".len(), 7);
+assert_eq!("ಠ_ಠ".chars().count(), 3);
+```
+
+## String
+```rust
+let error_message = "too many pets".to_string();
+// Макрос format!() работает как println!(), но вместо вывода в stdout возвра-щает новую строку, при этом в конец не добавляется знак новой строки
+assert_eq!(format!("{}°{:02}′{:02}′′N", 24, 5, 23), "24°05′23′′N".to_string());
+
+// У массивов, срезок и векторов есть два метода, .concat() и .join(sep), которые образуют новый объект String из нескольких строк:
+let bits = vec!["veni", "vidi", "vici"];
+assert_eq!(bits.concat(), "venividivici");
+assert_eq!(bits.join(", "), "veni, vidi, vici");
+
+// Использование
+assert!("ONE".to_lowercase() == "one");
+assert!("peanut".contains("nut"));
+assert_eq!("ಠ_ಠ".replace("ಠ", "0"), "0_0");
+assert_eq!("    clean\n".trim(), "clean");
+for word in "veni, vidi, vici".split(", ") {
+  assert!(word.starts_with("v"));
+}
+```
 
