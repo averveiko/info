@@ -309,3 +309,59 @@ impl StringTable {
 }
 ```
 
+## Match
+```rust
+match code {
+  0 => println!("OK"),
+  1 => println!("Перепутались провода"),
+  2 => println!("Пользователь спит"),
+  _  => println!("Неизвестная ошибка{}", code)
+}
+
+match params.get("name") {
+  Some(name) => println!("Привет,{}!", name),
+  None => println!("Приветствую,незнакомец.")
+}
+
+
+```
+
+## if let
+Существует еще одна форма выражения if– iflet:
+```rust
+// Если выражение expr соответствует образцу pattern, то выполняется блок block1, иначе блок block2
+if let pattern = expr {
+  block1
+} else {
+  block2
+}
+
+if let Some(cookie) = request.session_cookie {
+  return restore_session(cookie);
+}
+
+if let Err(err) = present_cheesy_anti_robot_task() {
+  log_robot_attempt(err);
+  politely_accuse_user_of_being_a_robot();
+} else {
+  session.mark_as_human();
+}
+
+// if let – всего лишь сокращенная запись match с единственным образцом:
+match expr {
+  pattern=> { block1 }
+  _ => { block2}
+}
+```
+
+## ?
+```rust
+let output = File::create(filename)?;
+
+//Эквивалентно:
+let output = match File::create(filename) {
+  Ok(f) => f, // просто output = f
+  Err(err) => return Err(err) // Если попадем сюда - произойдет возврат из текущией функции с возвратом ошибки
+};
+```
+
