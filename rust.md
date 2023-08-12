@@ -365,3 +365,21 @@ let output = match File::create(filename) {
 };
 ```
 
+## Приведение типов
+```rust
+let x = 17;              //x имеет тип i32
+let index = x as usize;  //преобразовать в типusize
+```
+
+## Замыкания
+```rust
+let is_even = |x| x % 2 == 0;
+
+let is_even = |x: u64| -> bool { x % 2 == 0 };
+assert_eq!(is_even(14), true);
+```
+
+## тип Result
+```rust
+fn get_weather(location: LatLng) -> Result<WeatherReport, io::Error>
+```
