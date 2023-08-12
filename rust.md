@@ -379,7 +379,153 @@ let is_even = |x: u64| -> bool { x % 2 == 0 };
 assert_eq!(is_even(14), true);
 ```
 
-## тип Result
+## Тип Result
 ```rust
 fn get_weather(location: LatLng) -> Result<WeatherReport, io::Error>
+
+match get_weather(hometown) {
+  Ok(report) => {
+    display_weather(hometown, &report);
+  }
+  Err(err) => {
+    println!("ошибка при запросе погоды:{}", err);
+    schedule_weather_retry();
+  }
+}
+```
+
+### Всякие удобные методы:
+* result.is_ok() и result.is_err() - bool значение
+* result.ok()  возвращает  успешный  результат,  если  таковой  присутствует, в виде значения типа Option<T>
+* result.err() возвращает ошибочный результат, если таковой присутствует, в виде значения типа Option<E>
+* result.unwrap_or(fallback) возвращает успешный результат, если таковой содержится в result. В противном случае возвращается fallback
+  ```rust
+  // Сравнительно безопасный прогноз погоды для Южной Калифорнии.
+  const THE_USUAL: WeatherReport = WeatherReport::Sunny(72);
+  // Получить истинный прогноз погоды, если возможно.
+  // Если нет, считать, что погода обычная.
+  let report = get_weather(los_angeles).unwrap_or(THE_USUAL);
+  display_weather(los_angeles, &report);
+  ```
+* result.unwrap_or_else(fallback_fn) – то же самое, но вместо возврата подмен-ного значения непосредственно вызывает переданную функцию или замыкание
+    ```rust
+    let report = get_weather(hometown)
+    .unwrap_or_else(|_err| vague_prediction(hometown));
+    ```
+* result.unwrap()  также  возвращает  успешный  результат,  если  он  содержится в result. Если же result содержит ошибочный результат, то этот метод паникует.
+* result.expect(message) – то же, что .unwrap(), но позволяет задать сообщение, которое печатается в случае паники
+* result.as_ref() преобразует Result<T,E> в Result<&T,&E>, заимствуя ссылку на успешный или ошибочный результат, содержащийся в имеющемся значении result.
+* result.as_mut() – то же самое, но заимствуется изменяемая ссылка. Тип возвращаемого значения – Result<&mutT,&mutE>. Иногда желательно получить доступ к данным внутри result, не унич-тожая их, именно для этого и предназначены методы .as_ref() и .as_mut()
+
+## Псевдонимы типа Result
+```rust
+// Это означает, что используется псевдоним типа Result
+fn remove_file(path: &Path) -> Result<()>
+
+// Здесь  определяется  открытый  тип std::io::Result<T>.  Это  псевдоним  типа Result<T,E>, но в качестве типа ошибки зашит тип std::io::Error
+pub type Result<T> = result::Result<T, Error>;
+```
+
+## Распространение ошибок
+```rust
+let weather = get_weather(hometown)?;
+```
+Поведение ? зависит от того, возвращает ли функция успешный или ошибочный результат.
+* В случае успеха оператор разворачивает Result методом unwrap, чтобы получить находящееся внутри него значение. В данном случае типом переменной weather будет не Result<WeatherReport,io::Error>, а просто Weather-Report.
+* В случае ошибки оператор сразу же возвращает управление из объемлющей функции, передавая ошибочный результат вверх по цепочке вызовов. Но чтобы этот механизм работал, оператор ? следует использовать только в функциях, возвращающих значение типа Result
+
+? аналогичен следющему коду:
+```rust
+let weather = match get_weather(hometown) {
+  Ok(success_value) => success_value,
+  Err(err) => return Err(err)
+};
+```
+
+### Пример обработки ошибок
+```rust
+// Обьявляем "универсальный" тип, переваривающий любые ошибки
+type GenError = Box<std::error::Error>;
+type GenResult<T> = Result<T, GenError>;
+
+use std::io::{self, BufRead};
+/// Читать целые числа из текстового файла.
+/// Вкаждой строке файла должно быть одно число.
+fn read_numbers(file: &mut BufRead) -> GenResult<Vec<i64>> {
+  let mut numbers = vec![];
+  for line_result in file.lines() {
+    let line = line_result?;      // чтение строки может завершиться ошибкой
+    numbers.push(line.parse()?);  // разбор целого числа может быть неудачным
+  }
+  Ok(numbers)
+}
+```
+
+Для обработки ошибок в main() проще всего использовать метод .expect().
+```rust
+fn main() {
+  calculate_tides().expect("error");  // здесь распространение прекращается
+}
+```
+Если  функция calculate_tides()  возвращает  ошибочный  результат,  то  метод .expect() паникует. Паника в главном потоке влечет за собой печать сообщения об ошибке и завершение программы с ненулевым кодом. В общем-то, такое поведение можно назвать желательным.
+
+Подробный вывод ошибки (всего дерева cause):
+```rust
+fn main() {
+  if let Err(err) = calculate_tides() {
+    print_error(&err);
+    std::process::exit(1);
+  }
+}
+
+use std::error::Error;
+use std::io::{Write, stderr};
+
+/// Вывести сообщение об ошибке в`stderr`.
+///
+/// Если  при построении сообщения об ошибке или его выводе
+/// произойдет еще одна ошибка, она будет проигнорирована.
+fn print_error(mut err: &Error) {
+  let _ = writeln!(stderr(), "error: {}", err);
+  while let Some(cause) = err.cause() {
+    let _ = writeln!(stderr(), "caused by: {}", cause);
+    err = cause;
+  }
+}
+```
+
+### Объявление пользовательского типа ошибки
+/json/src/error.rs
+```rust
+#[derive(Debug, Clone)]
+pub struct JsonError {
+  pub message: String,
+  pub line: usize,
+  pub column: usize,
+}
+```
+Эта структура будет именоваться json::error::JsonError, и если мы захотим вер-нуть ошибку такого типа, то напишем:
+```rust
+return Err(JsonError {
+  message: "expected ']' at end of array".to_string(),
+  line: current_line,
+  column: current_column
+});
+```
+Это работает. Но если мы захотим, чтобы наш тип ошибки вел себя как стандартные, то:
+```rust
+use std;
+use std::fmt;
+// Ошибки должны допускать распечатку.
+impl fmt::Display for JsonError {
+  fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+    write!(f, "{} ({}:{})", self.message, self.line, self.column)
+  }
+}
+// Ошибки должны реализовывать характеристику std::error::Error.
+impl std::error::Error for JsonError {
+  fn description(&self) -> &str {
+    &self.message
+  }
+}
 ```
