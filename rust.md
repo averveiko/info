@@ -529,3 +529,13 @@ impl std::error::Error for JsonError {
   }
 }
 ```
+
+## Tests
+```rust
+/// Этот тест проходит,т олько еслид еление на нуль вызывает панику,
+#[test]
+#[should_panic(expected="divide by zero")]
+fn test_divide_by_zero_error() {
+  1 / 0;  //should panic !
+}
+```
