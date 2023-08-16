@@ -1,5 +1,21 @@
 # Rust conspect
 
+## Snippets
+```rust
+// Чтение файла
+use std::fs;
+
+let read_result = fs::read_to_string(FILE_PATH);
+    let content = match read_result {
+        Ok(str) => str,
+        Err(_) => {
+            println!("Error reading file {}", FILE_PATH);
+            std::process::exit(1);
+        }
+    };
+```
+
+
 ```rust
 fn gcd(mut n: u64, mut m: u64) -> u64 {
   assert!(n != 0 && m != 0);
@@ -539,3 +555,5 @@ fn test_divide_by_zero_error() {
   1 / 0;  //should panic !
 }
 ```
+
+
