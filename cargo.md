@@ -1,3 +1,15 @@
+## Основное
+```sh
+# создать новый проект
+cargo new hello_cargo
+# билд
+cargo build
+# запуск
+cargo run
+# проверить без создания бинаря
+cargo check
+```
+
 ```sh
 # порождает  оптимизированную  выпускную  сборку.
 cargo build --release
