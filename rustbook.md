@@ -144,4 +144,56 @@ let allS = &s[..]; // срез весго слова
 let a = [1, 2, 3, 4, 5];
 let slice = &a[1..3]; // type: &[i32]
 ```
+##  Структуры
+```rust
+#[derive(Debug)]
+struct Rectangle {
+    width: u32,
+    height: u32
+}
+
+impl Rectangle {
+    // Типо конструктор квадратного прямоугольника
+    fn square(size: u32) -> Self {
+        Self {
+            width: size,
+            height: size,
+        }
+    }
+
+    fn area(&self) -> u32 { // Сокращение от self: &Self
+        self.width * self.height
+    }
+
+    fn can_hold(&self, other: &Rectangle) -> bool {
+        self.width >= other.width && self.height >= other.height
+    }
+}
+
+fn main() {
+    let rectangle1 = Rectangle {width: 4,height: 5};
+    let rectangle2 = Rectangle {width: 2,height: 3};
+    let square = Rectangle::square(30);
+
+    println!("Area of rectangle {:?} is {}", rectangle1, rectangle1.area());
+    println!("Can rect1 hold rect2? {}", rectangle1.can_hold(&rectangle2));
+    println!("Can rect1 hold square? {}", rectangle1.can_hold(&square));
+}
+
+// Синтаксис обновления структуры (user2 = копия (либо перемещение) user1 кроме email)
+let user2 = User {
+        email: String::from("another@example.com"),
+        ..user1
+    };
+```
+### Кортежная структура (кортеж с именем)
+```rust
+struct Color(i32, i32, i32);
+struct Point(i32, i32, i32);
+
+fn main() {
+    let black = Color(0, 0, 0);
+    let origin = Point(0, 0, 0);
+}
+```
 
