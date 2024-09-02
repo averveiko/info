@@ -224,4 +224,30 @@ m.call();
 ### Option
 [See doc here](https://doc.rust-lang.org/std/option/enum.Option.html)
 
+## Match
+```rust
+enum Coin {
+    Penny,
+    Nickel,
+    Dime,
+    Quarter,
+}
 
+fn value_in_cents(coin: Coin) -> u8 {
+    match coin {
+        Coin::Penny => 1,
+        Coin::Nickel => 5,
+        Coin::Dime => 10,
+        Coin::Quarter => 25,
+    }
+}
+```
+## Map, filter, etc
+```rust
+input
+    .iter()
+    .map(|element| {
+        element * 2
+    })
+    .collect()
+```
