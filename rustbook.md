@@ -288,3 +288,12 @@ input
     })
     .collect()
 ```
+## if let
+if let - синтаксический сахар для match, который выполнит код если входное значение будет соответствовать единственному шаблону, и проигнорирует все остальные значения.
+```rust
+let config_max = Some(3u8);
+if let Some(max) = config_max {
+    println!("The maximum is configured to be {max}");
+}
+// есть также else
+```
