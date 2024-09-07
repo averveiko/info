@@ -287,6 +287,8 @@ input
         element * 2
     })
     .collect()
+
+
 ```
 ## if let
 if let - синтаксический сахар для match, который выполнит код если входное значение будет соответствовать единственному шаблону, и проигнорирует все остальные значения.
@@ -296,4 +298,38 @@ if let Some(max) = config_max {
     println!("The maximum is configured to be {max}");
 }
 // есть также else
+```
+## Collections
+[Vector<T> дока](https://doc.rust-lang.org/std/vec/struct.Vec.html)
+```rust
+let v: Vec<i32> = Vec::new();
+let v = vec![1, 2, 3];
+v.push(5);
+
+let third: &i32 = &v[2];
+println!("The third element is {third}");
+// or
+let third: Option<&i32> = v.get(2);
+
+// iterate
+for i in &v {
+    println!("{i}");
+}
+// mutable iterate
+for i in &mut v {
+    *i += 50;
+}
+
+// Вектор, хранящий элементы разных типов
+enum SpreadsheetCell {
+    Int(i32),
+    Float(f64),
+    Text(String),
+}
+
+let row = vec![
+    SpreadsheetCell::Int(3),
+    SpreadsheetCell::Text(String::from("blue")),
+    SpreadsheetCell::Float(10.12),
+];
 ```
